@@ -168,4 +168,91 @@ This is a foundational step toward building automated alerts, user nudges, or co
 - Consider adding inactivity categories (e.g., 1–2 years, 2–5 years, etc.) for more granularity.
 
 
+# Question_4 (Customer Lifetime Value (CLV) Estimation – SQL Approach)
+
+## 🧠 Objective
+
+Marketing requested a simplified model to **estimate Customer Lifetime Value (CLV)** based on:
+
+- **Account tenure** (in months since signup),
+- **Total number of transactions**, and
+- An assumed **profit per transaction** of **0.1% (0.001)** of the transaction value.
+
+---
+
+## 🛠️ Approach
+
+### ✅ Step-by-step Breakdown:
+
+1. **Join Users and Transactions**
+   - We join the `users_customuser` table with the `savings_savingsaccount` table using the `owner_id` field.
+
+2. **Calculate Tenure (Months)**
+   - `TIMESTAMPDIFF(MONTH, u.date_joined, CURDATE())` gives us the number of months a customer has been active.
+
+3. **Total Transactions**
+   - We count the number of transactions using `COUNT(s.savings_id)`, assuming `savings_id` is the primary key in `savings_savingsaccount`.
+
+4. **Estimate Average Profit Per Transaction**
+   - Profit is calculated as `0.001 * transaction amount`. So, average profit per transaction is:
+     ```
+     SUM(s.amount) * 0.001 / COUNT(s.savings_id)
+     ```
+
+5. **Apply the CLV Formula**
+   - Using the provided simplified formula:
+     ```
+     CLV = (total_transactions / tenure_months) * 12 * avg_profit_per_transaction
+     ```
+     - The division normalizes transaction frequency.
+     - Multiplication by 12 annualizes the value.
+
+6. **Prevent Division Errors**
+   - We use `NULLIF()` to avoid division by zero, especially for new customers (tenure = 0) or those without any transactions.
+
+7. **Final Output**
+   - Results are sorted by `estimated_clv` in descending order to highlight the most valuable customers first.
+
+---
+
+## ⚠️ Challenges & Considerations
+
+- **Division by Zero**
+  - Protected using `NULLIF()` in both the tenure and transaction count parts of the formula.
+
+- **Data Integrity**
+  - Assumes each row in `savings_savingsaccount` reflects a valid transaction. No filtering for failed or test records was applied.
+
+- **Simplified Estimation**
+  - This CLV calculation doesn't account for churn, customer segmentation, time value of money, or future forecasting. It's intended as a quick, data-driven estimate.
+
+---
+
+## 🧾 Sample Output
+
+| customer_id | name         | tenure_months | total_transactions | estimated_clv |
+|-------------|--------------|----------------|---------------------|----------------|
+| 1001        | John Doe     | 24             | 120                 | 600.00         |
+| 1002        | Jane Smith   | 18             | 90                  | 450.00         |
+
+---
+
+## 🗂️ Tables Used
+
+- **users_customuser** – stores user profiles and signup dates.
+- **savings_savingsaccount** – stores transaction data tied to customers and amounts.
+
+---
+
+## 💡 Notes
+
+- You may enhance this model by incorporating:
+  - Retention/churn rates
+  - Profit margins by product or customer type
+  - Time decay or discounting for long-term revenue
+
+---
+
+
+
 
